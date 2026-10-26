@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Register{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+{% block body %}
+<main class="auth-card">
+  <div class="brand brand-lg"><span class="logo">&#10003;</span> TaskFlow</div>
+  <h1>Create your account</h1>
+  <p class="muted">New accounts start with the User role.</p>
+  <form id="register-form" novalidate>
+    <div class="form-error" id="form-error" role="alert" hidden></div>
+    <label>Full name
+      <input type="text" name="name" id="name" autocomplete="name" maxlength="60" required autofocus>
+    </label>
+    <label>Email
+      <input type="email" name="email" id="email" autocomplete="username" required>
+    </label>
+    <label>Password
+      <input type="password" name="password" id="password" autocomplete="new-password" required>
+      <small class="muted">At least 8 characters, with a letter and a number.</small>
+    </label>
+    <label>Confirm password
+      <input type="password" name="confirm" id="confirm" autocomplete="new-password" required>
+    </label>
+    <button class="btn btn-primary btn-block" type="submit" id="submit-btn">Register</button>
+  </form>
+  <p class="muted small center">Already registered? <a href="{{ url_for('login_page') }}">Log in</a></p>
+</main>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/auth.js') }}"></script>{% endblock %}

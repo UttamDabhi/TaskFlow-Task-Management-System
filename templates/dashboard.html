@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block body %}
+<script id="boot" type="application/json">{{ user|tojson }}</script>
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand"><span class="logo">&#10003;</span> TaskFlow</div>
+    <nav class="nav" aria-label="Main">
+      <button class="nav-item active" data-view="tasks" type="button">&#9776; Tasks</button>
+      <button class="nav-item" data-view="ai" type="button">&#10024; AI Assist</button>
+      {% if user.role == 'admin' %}
+      <button class="nav-item" data-view="users" type="button">&#9787; Users</button>
+      {% endif %}
+    </nav>
+    <div class="sidebar-foot">
+      <div class="who">
+        <strong>{{ user.name }}</strong>
+        <span class="badge role-{{ user.role }}">{{ user.role|capitalize }}</span>
+      </div>
+      <button class="btn btn-ghost btn-block" id="logout-btn" type="button">Log out</button>
+    </div>
+  </aside>
+  <div class="scrim" id="scrim" hidden></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" id="menu-btn" type="button" aria-label="Open menu">&#9776;</button>
+      <h1 id="view-title">Tasks</h1>
+      <div class="topbar-actions">
+        <button class="btn btn-ghost" id="refresh-btn" type="button">&#8635; Refresh</button>
+        {% if user.role in ('admin', 'manager') %}
+        <button class="btn btn-primary" id="new-task-btn" type="button">+ New task</button>
+        {% endif %}
+      </div>
+    </header>
+
+    <main class="content">
+      <!-- Tasks view -->
+      <section id="view-tasks" class="view">
+        <div class="stats" id="stats">
+          <div class="stat"><span class="stat-label">Total</span><span class="stat-value" id="stat-total">-</span></div>
+          <div class="stat"><span class="stat-label">Pending</span><span class="stat-value" id="stat-pending">-</span></div>
+          <div class="stat"><span class="stat-label">In progress</span><span class="stat-value" id="stat-in_progress">-</span></div>
+          <div class="stat"><span class="stat-label">Completed</span><span class="stat-value" id="stat-completed">-</span></div>
+          <div class="stat stat-urgent"><span class="stat-label">Urgent (open)</span><span class="stat-value" id="stat-urgent">-</span></div>
+        </div>
+
+        <div class="toolbar">
+          <input type="search" id="search" placeholder="Search by title..." aria-label="Search tasks by title">
+          <select id="filter-status" aria-label="Filter by status">
+            <option value="">All statuses</option>
+            {% for s in statuses %}<option>{{ s }}</option>{% endfor %}
+          </select>
+          <select id="filter-priority" aria-label="Filter by priority">
+            <option value="">All priorities</option>
+            {% for p in priorities %}<option>{{ p }}</option>{% endfor %}
+          </select>
+          <select id="filter-assignee" aria-label="Filter by assignee">
+            <option value="">All assignees</option>
+            <option value="unassigned">Unassigned</option>
+          </select>
+          <button class="btn btn-ghost" id="clear-filters" type="button">Clear</button>
+        </div>
+
+        <div id="task-state" class="state" role="status"></div>
+        <div id="task-list" class="task-grid"></div>
+      </section>
+
+      <!-- AI Assist view -->
+      <section id="view-ai" class="view" hidden>
+        <div class="panel">
+          <h2>Priority suggestion</h2>
+          <p class="muted">Describe a task and get a recommended priority. This is a <strong>rule-based
+            recommendation</strong> that looks for urgency keywords and due dates. It is not an AI language model
+            and sends nothing to external services.</p>
+          <form id="ai-form" novalidate>
+            <label>Task description
+              <textarea id="ai-text" rows="4" maxlength="2000"
+                placeholder="e.g. Production outage affecting all users; fix ASAP"></textarea>
+            </label>
+            <label>Due date (optional)
+              <input type="date" id="ai-due">
+            </label>
+            <div class="form-actions">
+              <button class="btn btn-primary" type="submit" id="ai-btn">Suggest priority</button>
+              <button class="btn btn-ghost" type="button" id="ai-example">Try an example</button>
+            </div>
+          </form>
+          <div id="ai-result" class="ai-result" hidden></div>
+        </div>
+      </section>
+
+      {% if user.role == 'admin' %}
+      <!-- Users view (admin) -->
+      <section id="view-users" class="view" hidden>
+        <div class="panel">
+          <h2>User management</h2>
+          <p class="muted">Change roles or remove accounts. You cannot change or delete your own account here.</p>
+          <div id="users-state" class="state" role="status"></div>
+          <div class="table-wrap"><table class="table" id="users-table" hidden>
+            <thead><tr><th>Name</th><th>Email</th><th>Role</th><th></th></tr></thead>
+            <tbody id="users-body"></tbody>
+          </table></div>
+        </div>
+      </section>
+      {% endif %}
+    </main>
+  </div>
+</div>
+
+<dialog id="task-dialog" class="dialog">
+  <form id="task-form" novalidate>
+    <h2 id="dialog-title">New task</h2>
+    <div class="form-error" id="task-form-error" role="alert" hidden></div>
+    <label>Title
+      <input type="text" id="f-title" maxlength="120" required>
+    </label>
+    <label>Description
+      <textarea id="f-description" rows="3" maxlength="2000"></textarea>
+    </label>
+    <div class="grid-2">
+      <label>Status
+        <select id="f-status">{% for s in statuses %}<option>{{ s }}</option>{% endfor %}</select>
+      </label>
+      <label>Priority
+        <select id="f-priority">{% for p in priorities %}<option {{ 'selected' if p == 'Medium' }}>{{ p }}</option>{% endfor %}</select>
+      </label>
+      <label>Assignee
+        <select id="f-assignee"><option value="">Unassigned</option></select>
+      </label>
+      <label>Due date
+        <input type="date" id="f-due">
+      </label>
+    </div>
+    <div class="suggest-row">
+      <button type="button" class="btn btn-ghost btn-sm" id="f-suggest">&#10024; Suggest priority</button>
+      <span class="muted small" id="f-suggest-hint"></span>
+    </div>
+    <div class="form-actions end">
+      <button type="button" class="btn btn-ghost" id="dialog-cancel">Cancel</button>
+      <button type="submit" class="btn btn-primary" id="dialog-save">Save task</button>
+    </div>
+  </form>
+</dialog>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/app.js') }}"></script>{% endblock %}

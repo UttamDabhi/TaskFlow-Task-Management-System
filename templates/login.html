@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Log in{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+{% block body %}
+<main class="auth-card">
+  <div class="brand brand-lg"><span class="logo">&#10003;</span> TaskFlow</div>
+  <h1>Welcome back</h1>
+  <p class="muted">Log in to manage your tasks.</p>
+  <form id="login-form" novalidate>
+    <div class="form-error" id="form-error" role="alert" hidden></div>
+    <label>Email
+      <input type="email" name="email" id="email" autocomplete="username" required autofocus>
+    </label>
+    <label>Password
+      <input type="password" name="password" id="password" autocomplete="current-password" required>
+    </label>
+    <button class="btn btn-primary btn-block" type="submit" id="submit-btn">Log in</button>
+  </form>
+  <p class="muted small center">No account? <a href="{{ url_for('register_page') }}">Create one</a></p>
+  <details class="demo-box">
+    <summary>Demo accounts</summary>
+    <div class="demo-list">
+      <button type="button" class="chip" data-email="admin@example.com" data-password="Admin123!">Admin</button>
+      <button type="button" class="chip" data-email="manager@example.com" data-password="Manager123!">Manager</button>
+      <button type="button" class="chip" data-email="user@example.com" data-password="User12345!">User</button>
+    </div>
+    <p class="muted small">Click a role to fill the form, then press Log in.</p>
+  </details>
+</main>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/auth.js') }}"></script>{% endblock %}
